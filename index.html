@@ -594,86 +594,58 @@
         /**
          * 生成提示词 (非流式)
          */
-       /**
- * 生成提示词 (非流式) - 带详细错误信息
- */
-async function generatePrompt(formData) {
-    const generateBtn = document.getElementById('generateBtn');
-    const originalText = generateBtn.innerHTML;
-    generateBtn.innerHTML = '<span>⏳</span>AI生成中...';
-    generateBtn.disabled = true;
-    
-    document.getElementById('loading').classList.remove('hidden');
-    document.getElementById('promptResult').style.display = 'none';
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/aigc-api/common/prompt/generate`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
-        });
-        
-        // 检查HTTP状态码
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
-        }
-        
-        const data = await response.json();
-        
-        // 隐藏加载动画
-        document.getElementById('loading').classList.add('hidden');
-        document.getElementById('promptResult').style.display = 'block';
-        
-        // 恢复按钮状态
-        generateBtn.innerHTML = '<span>🚀</span>生成AI写作提示词';
-        generateBtn.disabled = false;
-        
-        if (data.success) {
-            // 显示生成的提示词
-            document.getElementById('promptResult').textContent = data.data.prompt;
-            if (data.data.authorName && !formData.authorName) {
-                document.getElementById('authorName').value = data.data.authorName;
+        async function generatePrompt(formData) {
+            // 修改按钮状态为"AI生成中..."
+            const generateBtn = document.getElementById('generateBtn');
+            const originalText = generateBtn.innerHTML;
+            generateBtn.innerHTML = '<span>⏳</span>AI生成中...';
+            generateBtn.disabled = true;
+            
+            // 显示加载动画
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('promptResult').style.display = 'none';
+            try {
+                const response = await fetch(`${API_BASE_URL}/aigc-api/common/prompt/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                const data = await response.json();
+                // 隐藏加载动画
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('promptResult').style.display = 'block';
+                
+                // 恢复按钮状态
+                const generateBtn = document.getElementById('generateBtn');
+                generateBtn.innerHTML = '<span>🚀</span>生成AI写作提示词';
+                generateBtn.disabled = false;
+                
+                if (data.success) {
+                    // 显示生成的提示词
+                    document.getElementById('promptResult').textContent = data.data.prompt;
+                    // 如果返回了随机生成的作者名，更新输入框
+                    if (data.data.authorName && !formData.authorName) {
+                        document.getElementById('authorName').value = data.data.authorName;
+                    }
+                } else {
+                    // 显示错误信息
+                    document.getElementById('promptResult').textContent = '生成失败: ' + (data.message || data.error || '未知错误');
+                }
+            } catch (error) {
+                console.error('生成提示词错误:', error);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('promptResult').style.display = 'block';
+                document.getElementById('promptResult').textContent = '请求失败，请检查网络连接或API密钥是否正确';
+                
+                // 恢复按钮状态
+                const generateBtn = document.getElementById('generateBtn');
+                generateBtn.innerHTML = '<span>🚀</span>生成AI写作提示词';
+                generateBtn.disabled = false;
             }
-        } else {
-            // 显示详细错误信息
-            const errorMsg = `生成失败:\n` +
-                           `错误代码: ${data.code || '未知'}\n` +
-                           `错误信息: ${data.message || data.error || '未知错误'}\n\n` +
-                           `可能原因:\n` +
-                           `1. API密钥无效或已过期\n` +
-                           `2. API密钥配额不足\n` +
-                           `3. 密钥权限受限\n\n` +
-                           `请检查您的API密钥设置`;
-            document.getElementById('promptResult').textContent = errorMsg;
-            console.error('API错误详情:', data);
         }
-    } catch (error) {
-        console.error('生成提示词错误:', error);
-        document.getElementById('loading').classList.add('hidden');
-        document.getElementById('promptResult').style.display = 'block';
-        
-        // 显示详细错误信息
-        const errorMsg = `请求失败:\n` +
-                       `错误: ${error.message || '未知错误'}\n\n` +
-                       `可能原因:\n` +
-                       `1. 网络连接问题\n` +
-                       `2. API服务器无响应\n` +
-                       `3. API密钥格式错误\n` +
-                       `4. 跨域访问被阻止\n\n` +
-                       `建议:\n` +
-                       `- 检查网络连接\n` +
-                       `- 确认API密钥是否正确\n` +
-                       `- 查看浏览器控制台获取更多信息`;
-        document.getElementById('promptResult').textContent = errorMsg;
-        
-        // 恢复按钮状态
-        generateBtn.innerHTML = '<span>🚀</span>生成AI写作提示词';
-        generateBtn.disabled = false;
-    }
-}
+
 
 
         /**
