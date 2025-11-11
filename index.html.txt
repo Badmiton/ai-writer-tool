@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>AI写作提示词生成器 - 六七向上</title>
+    <link rel="icon" type="image/png" href="../assets/images/火爆.png">
+    <!-- CDN引入 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#22c55e',
+                        secondary: '#3b82f6',
+                        background: {
+                            light: '#FFFFFF',
+                            dark: '#181818'
+                        }
+                    }
+                }
+            },
+            darkMode: 'class'
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        .header { 
+            background: #22c55e; 
+            color: white; 
+            padding: 12px 0; 
+            text-align: center; 
+            position: relative;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .header-content {
+            display: inline-block;
+        }
+        
+        .header h1 { 
+            font-size: 24px; 
+            margin-bottom: 0; 
+            display: inline-block;
+        }
+        
+        .header p { 
+            font-size: 13px; 
+            opacity: 0.9; 
+            display: inline-block;
+            margin-left: 10px;
+            position: relative;
+            top: -2px;
+        }
+
+        /* 主页链接 */
+        .home-link {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            color: white;
+            text-decoration: none;
+            background: rgba(255,255,255,0.1);
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+        .home-link:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* 提示词结果区域样式 */
+        #promptResult {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            min-height: 200px;
+            white-space: pre-wrap;
+            font-size: 0.875rem;
+            color: #333;
+            line-height: 1.6;
+            overflow-y: auto;
+            max-height: 500px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #22c55e;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: #16a34a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid #22c55e;
+            color: #22c55e;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline:hover {
+            background-color: rgba(34, 197, 94, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .api-key-section {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .warning {
+            background-color: #fffbeb;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .header {
+                padding-top: 15px;
+                padding-bottom: 15px;
+            }
+            
+            .home-link {
+                position: static;
+                margin: 0 auto 10px;
+                display: block;
+                width: fit-content;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 头部区域 -->
+    <div class="header">
+        <a href="../index.html" class="home-link">返回首页</a>
+        <div class="header-content">
+            <h1>AI写作提示词生成器</h1>
+            <p>根据您的需求，生成优质的AI写作提示词</p>
+        </div>
+    </div>
+
+    <!-- 主要内容 -->
+    <main class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- API密钥区域 -->
+        <div class="api-key-section mb-8 p-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-3">中转API密钥设置</h3>
+            <div class="warning p-4 mb-4 text-amber-800 text-sm rounded">
+                本工具需要使用您自己的中转API密钥。如果没有申请过API密钥，请先<a href="https://x165rqet110.feishu.cn/wiki/RGZYwuQ7biUPIektzpUcjTxvnDd?from=from_copylink" target="_blank" class="text-blue-600 hover:underline font-medium">查看申请教程</a>。API密钥仅保存在您的浏览器中，不会上传至我们的服务器。
+            </div>
+            <div class="flex gap-3">
+                <input type="password" id="apiKey" placeholder="请输入您的API密钥" 
+                       class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition">
+                <button id="saveApiKeyBtn" class="btn-outline px-4 py-2 rounded-lg font-medium">保存密钥</button>
+            </div>
+            <p class="text-xs text-gray-500 mt-2 italic">密钥将保存在您的浏览器本地存储中，刷新页面不会丢失</p>
+        </div>
+
+        <!-- 主容器 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="mainContainer">
+            <!-- 左侧表单 -->
+            <div class="card p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="text-2xl mr-2">📝</span>
+                    提示词参数设置
+                </h2>
+                <form id="promptForm" class="space-y-4">
+                    <!-- 作者姓名 -->
+                    <div>
+                        <label for="authorName" class="block text-sm font-medium text-gray-700 mb-1">作者姓名（可选）</label>
+                        <input type="text" id="authorName" name="authorName" placeholder="输入姓名（可不选）" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
+                        <p class="text-xs text-gray-500 mt-1 italic">可以是真实姓名，也可以是笔名或角色名（可选）</p>
+                    </div>
+
+                    <!-- 人设补充信息 -->
+                    <div>
+                        <label for="personaDetails" class="block text-sm font-medium text-gray-700 mb-1">人设补充信息（可选）</label>
+                        <textarea id="personaDetails" name="personaDetails" placeholder="在此补充性别、年龄、特殊的个人经历、独特技能、个人爱好、人生感悟等....例如:
+• 性别：女，年龄：28岁
+• 曾在偏远山区支教2年，深刻体验教育资源差异
+• 业余时间是马拉松爱好者，完成过5次全马
+• 从小在多文化家庭长大，精通3种语言
+• 经历过创业失败，对风险有独特认知" rows="4"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 outline-none resize-vertical"></textarea>
+                        <div class="flex justify-between text-xs mt-1">
+                            <span class="text-gray-600 text-xs">💡 这些信息将使你的人设更加立体和独特，提升内容的真实感、降低AI味</span>
+                            <span class="text-gray-500 text-xs"><span id="personaDetailsCount">0</span>/200</span>
+                        </div>
+                    </div>
+
+                    <!-- 系统功能选项 -->
+                    <div class="space-y-3">
+                        <h3 class="text-sm font-medium text-gray-700 mb-2">系统功能设置</h3>
+                        
+                        <!-- 使用随机角色生成 -->
+                        <div class="flex items-start space-x-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                            <input type="checkbox" id="useRandomCharacter" name="useRandomCharacter" 
+                                   class="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-purple-600 text-lg">🎲</span>
+                                    <label for="useRandomCharacter" class="text-sm font-medium text-gray-700">使用随机角色生成</label>
+                                </div>
+                                <p class="text-xs text-gray-600 mt-1">启用后，AI将根据选择的文章领域自动生成4-6个专业角色，并随机选择一个进行创作（将覆盖上方手动设置的人设信息）</p>
+                            </div>
+                        </div>
+                        
+                        <!-- 过朱雀大模型检测 -->
+                        <div class="flex items-start space-x-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <input type="checkbox" id="enableAIDetectionEvasion" name="enableAIDetectionEvasion" 
+                                   class="mt-1 h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-blue-600 text-lg">🛡️</span>
+                                    <label for="enableAIDetectionEvasion" class="text-sm font-medium text-gray-700">过朱雀大模型检测</label>
+                                </div>
+                                <p class="text-xs text-gray-600 mt-1">启用后将优化句式结构、标点符号等，提高内容的人性化表达，降低AI检测风险</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 性格特质 -->
+                    <div>
+                        <label for="personalityTraits" class="block text-sm font-medium text-gray-700 mb-1">性格特质（可选）</label>
+                        <select id="personalityTraits" name="personalityTraits" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
+                            <option value="">请选择性格特质（可选）</option>
+                            <!-- 选项会通过API动态加载 -->
+                        </select>
+                    </div>
+
+                    <!-- 文章领域 -->
+                    <div>
+                        <label for="contentDomain" class="block text-sm font-medium text-gray-700 mb-1">文章领域（可选）</label>
+                        <select id="contentDomain" name="contentDomain" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
+                            <option value="">请选择文章领域（可选）</option>
+                            <!-- 选项会通过API动态加载 -->
+                        </select>
+                    </div>
+
+                    <!-- 目标受众 -->
+                    <div>
+                        <label for="targetAudience" class="block text-sm font-medium text-gray-700 mb-1">目标受众（可选）</label>
+                        <select id="targetAudience" name="targetAudience" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
+                            <option value="">请选择目标受众（可选）</option>
+                            <!-- 分组选项会通过API动态加载 -->
+                        </select>
+                    </div>
+
+                    <!-- 二级标题格式 -->
+                    <div>
+                        <label for="headingStyle" class="block text-sm font-medium text-gray-700 mb-1">二级标题格式（可选）</label>
+                        <select id="headingStyle" name="headingStyle" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
+                            <option value="">请选择二级标题格式（可不选）</option>
+                            <!-- 选项会通过API动态加载 -->
+                        </select>
+                    </div>
+
+                    <!-- 字数要求 -->
+                    <div>
+                        <label for="wordCount" class="block text-sm font-medium text-gray-700 mb-1">预计总字数（可选）</label>
+                        <input type="number" id="wordCount" name="wordCount" placeholder="如1200（可不填）" min="300" step="100"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none" />
+                        <p class="text-xs text-gray-500 mt-1">若不填写，系统将默认使用1200字</p>
+                    </div>
+
+
+
+                    <!-- 范文输入 -->
+                    <div>
+                        <label for="sampleContent" class="block text-sm font-medium text-gray-700 mb-1">范文输入 <span class="text-red-500">*</span></label>
+                        <textarea id="sampleContent" name="sampleContent" placeholder="请输入一篇你希望模仿风格的范文，至少800字." rows="8" required
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none resize-vertical"></textarea>
+                        <div class="flex justify-end text-xs text-gray-500 mt-1"><span id="sampleContentCount">0</span>/8000</div>
+                    </div>
+
+                    <!-- 生成按钮 -->
+                    <button type="submit" id="generateBtn" class="btn-primary w-full py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2">
+                        <span>🚀</span>
+                        生成AI写作提示词
+                    </button>
+                </form>
+            </div>
+
+            <!-- 右侧结果展示 -->
+            <div class="card p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="text-2xl mr-2">✨</span>
+                    生成的提示词
+                </h2>
+
+                <!-- 加载动画 -->
+                <div class="loading hidden text-center py-12" id="loading">
+                    <div class="inline-block w-12 h-12 border-4 border-gray-200 border-t-green-600 rounded-full animate-spin"></div>
+                    <p class="mt-4 text-gray-600">生成中，请稍候...</p>
+                </div>
+
+                <!-- 提示词结果 -->
+                <div id="promptResult" class="mb-4">
+                    AI生成的写作提示词将显示在这里...
+                </div>
+
+                <!-- 结果操作按钮 -->
+                <div class="flex gap-3 mt-4">
+                    <button id="copyBtn" class="btn-primary flex-1 py-2 px-4 rounded-lg font-medium">
+                        复制提示词
+                    </button>
+                    <button id="exportBtn" class="btn-outline flex-1 py-2 px-4 rounded-lg font-medium">
+                        导出为TXT
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // API基础URL
+        //const API_BASE_URL = 'http://localhost:3001'; // 开发环境
+        const API_BASE_URL = 'https://67xiangshang.vip'; // 生产环境
+
+        // DOM加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 加载配置数据
+            loadConfig();
+            
+            // 设置字数统计
+            setupCharCounter('personaDetails', 'personaDetailsCount', 200);
+            setupCharCounter('sampleContent', 'sampleContentCount', 8000);
+            
+            // 设置表单提交
+            document.getElementById('promptForm').addEventListener('submit', handleFormSubmit);
+            
+            // 设置复制和导出按钮
+            document.getElementById('copyBtn').addEventListener('click', copyPrompt);
+            document.getElementById('exportBtn').addEventListener('click', exportPrompt);
+            
+            // 设置API密钥保存
+            document.getElementById('saveApiKeyBtn').addEventListener('click', saveApiKey);
+            
+            // 设置系统功能选项默认值
+            document.getElementById('useRandomCharacter').checked = false;
+            document.getElementById('enableAIDetectionEvasion').checked = false;
+            
+            // 添加随机角色选择时的覆盖逻辑
+            document.getElementById('useRandomCharacter').addEventListener('change', function() {
+                const authorNameInput = document.getElementById('authorName');
+                const personaDetailsInput = document.getElementById('personaDetails');
+                
+                if (this.checked) {
+                    // 启用随机角色时，清空并禁用姓名和人设信息
+                    authorNameInput.value = '';
+                    authorNameInput.disabled = true;
+                    authorNameInput.placeholder = '随机角色生成已启用，姓名将自动生成';
+                    
+                    personaDetailsInput.value = '';
+                    personaDetailsInput.disabled = true;
+                    personaDetailsInput.placeholder = '随机角色生成已启用，人设信息将自动生成';
+                } else {
+                    // 关闭随机角色时，启用姓名和人设信息
+                    authorNameInput.disabled = false;
+                    authorNameInput.placeholder = '输入姓名（可不选）';
+                    
+                    personaDetailsInput.disabled = false;
+                    personaDetailsInput.placeholder = '在此补充性别、年龄、特殊的个人经历、独特技能、个人爱好、人生感悟等....例如:\n• 性别：女，年龄：28岁\n• 曾在偏远山区支教2年，深刻体验教育资源差异\n• 业余时间是马拉松爱好者，完成过5次全马\n• 从小在多文化家庭长大，精通3种语言\n• 经历过创业失败，对风险有独特认知';
+                }
+            });
+            
+            // 初始化时执行一次，确保状态一致
+            document.getElementById('useRandomCharacter').dispatchEvent(new Event('change'));
+            
+            // 尝试从本地存储加载API密钥
+            const savedApiKey = localStorage.getItem('yunwuApiKey');
+            if (savedApiKey) {
+                document.getElementById('apiKey').value = savedApiKey;
+            }
+        });
+
+        /**
+         * 保存API密钥到本地存储
+         */
+        function saveApiKey() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (apiKey) {
+                localStorage.setItem('yunwuApiKey', apiKey);
+                alert('API密钥已保存');
+            } else {
+                alert('请输入API密钥');
+            }
+        }
+
+        /**
+         * 加载配置数据（人设等级、性格特质等选项）
+         */
+        async function loadConfig() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/aigc-api/common/prompt/config`, {
+                    method: 'GET'
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 人设等级选项（已废弃，系统自动生成）
+                    // const personaLevelSelect = document.getElementById('personaLevel');
+                    // personaLevelSelect.innerHTML = '<option value="">系统自动生成</option>';
+                    
+                    // 填充性格特质选项
+                    const personalityTraitsSelect = document.getElementById('personalityTraits');
+                    personalityTraitsSelect.innerHTML = '<option value="">请选择性格特质（可不选）</option>';
+                    
+                    data.data.personalityTraits.forEach((trait, index) => {
+                        const option = document.createElement('option');
+                        option.value = trait.value;
+                        option.textContent = `${trait.icon} ${trait.value}`;
+                        option.title = trait.description;
+                        personalityTraitsSelect.appendChild(option);
+                    });
+                    
+                    // 填充文章领域选项
+                    const contentDomainSelect = document.getElementById('contentDomain');
+                    contentDomainSelect.innerHTML = '<option value="">请选择文章领域（可不选）</option>';
+                    
+                    data.data.contentDomains.forEach((domain, index) => {
+                        const option = document.createElement('option');
+                        option.value = domain.value;
+                        option.textContent = `${domain.icon} ${domain.value}`;
+                        contentDomainSelect.appendChild(option);
+                    });
+                    
+                    // 填充二级标题格式
+                    const headingStyleSelect = document.getElementById('headingStyle');
+                    headingStyleSelect.innerHTML = '<option value="">请选择二级标题格式（可不选）</option>';
+                    if (data.data.headingStyles) {
+                        data.data.headingStyles.forEach((style, index) => {
+                            const option = document.createElement('option');
+                            option.value = style.value;
+                            option.textContent = `${style.icon || ''} ${style.value}`.trim();
+                            option.title = (style.description || '').replace(/\n/g, '\\n- ');
+                            headingStyleSelect.appendChild(option);
+                            
+                            // 默认选择"全文无二级标题"选项
+                            if (style.value.includes('全文无二级标题')) {
+                                option.selected = true;
+                            }
+                        });
+                    }
+
+                    // 填充目标受众选项（分组显示）
+                    const targetAudienceSelect = document.getElementById('targetAudience');
+                    targetAudienceSelect.innerHTML = '<option value="">请选择目标受众（可不选）</option>';
+                    
+                    // 按分组组织数据
+                    const groupedAudiences = {};
+                    data.data.targetAudiences.forEach(audience => {
+                        if (!groupedAudiences[audience.group]) {
+                            groupedAudiences[audience.group] = [];
+                        }
+                        groupedAudiences[audience.group].push(audience);
+                    });
+                    
+                    // 按分组顺序添加选项
+                    Object.keys(groupedAudiences).forEach(groupName => {
+                        // 添加分组标题
+                        const groupOption = document.createElement('option');
+                        groupOption.value = '';
+                        groupOption.textContent = `━━━ ${groupName} ━━━`;
+                        groupOption.disabled = true;
+                        groupOption.style.fontWeight = 'bold';
+                        groupOption.style.backgroundColor = '#f3f4f6';
+                        targetAudienceSelect.appendChild(groupOption);
+                        
+                        // 添加该分组下的选项
+                        groupedAudiences[groupName].forEach(audience => {
+                            const option = document.createElement('option');
+                            option.value = audience.value;
+                            option.textContent = `  ${audience.icon} ${audience.value}`;
+                            option.title = audience.description;
+                            targetAudienceSelect.appendChild(option);
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('加载配置错误:', error);
+                alert('加载选项失败，请刷新页面重试');
+            }
+        }
+
+        /**
+         * 设置字数统计功能
+         */
+        function setupCharCounter(textareaId, counterId, limit) {
+            const textarea = document.getElementById(textareaId);
+            const counter = document.getElementById(counterId);
+            
+            textarea.addEventListener('input', function() {
+                const count = textarea.value.length;
+                counter.textContent = count;
+                
+                if (count > limit) {
+                    counter.style.color = '#ef4444';
+                    textarea.style.borderColor = '#ef4444';
+                } else {
+                    counter.style.color = '#6b7280';
+                    textarea.style.borderColor = '#d1d5db';
+                }
+            });
+        }
+
+        /**
+         * 处理表单提交
+         */
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            
+            // 获取API密钥
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) {
+                alert('请先设置API密钥');
+                return;
+            }
+            
+            // 获取作者名
+            const authorName = document.getElementById('authorName').value;
+            
+            // 获取表单数据
+            const formData = {
+                authorName: authorName,
+                personaLevel: '', // 已废弃，系统自动生成
+                personalityTraits: document.getElementById('personalityTraits').value,
+                contentDomain: document.getElementById('contentDomain').value,
+                targetAudience: document.getElementById('targetAudience').value,
+                headingStyle: document.getElementById('headingStyle').value,
+                wordCount: document.getElementById('wordCount').value,
+                personaDetails: document.getElementById('personaDetails').value,
+                sampleContent: document.getElementById('sampleContent').value,
+                useRandomCharacter: document.getElementById('useRandomCharacter').checked,
+                enableAIDetectionEvasion: document.getElementById('enableAIDetectionEvasion').checked,
+                apiKey: apiKey // 添加API密钥
+            };
+            
+            // 验证必填字段（只有范文是必填的）
+            if (!formData.sampleContent) {
+                alert('请输入范文');
+                return;
+            }
+            
+            // 验证范文输入
+            if (!formData.sampleContent) {
+                alert('请输入范文');
+                return;
+            }
+            
+            if (formData.sampleContent.length < 800) {
+                alert('范文输入至少需要800字');
+                return;
+            }
+            
+            // 默认使用非流式输出
+            generatePrompt(formData);
+        }
+
+        /**
+         * 生成提示词 (非流式)
+         */
+        async function generatePrompt(formData) {
+            // 修改按钮状态为"AI生成中..."
+            const generateBtn = document.getElementById('generateBtn');
+            const originalText = generateBtn.innerHTML;
+            generateBtn.innerHTML = '<span>⏳</span>AI生成中...';
+            generateBtn.disabled = true;
+            
+            // 显示加载动画
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('promptResult').style.display = 'none';
+            try {
+                const response = await fetch(`${API_BASE_URL}/aigc-api/common/prompt/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                const data = await response.json();
+                // 隐藏加载动画
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('promptResult').style.display = 'block';
+                
+                // 恢复按钮状态
+                const generateBtn = document.getElementById('generateBtn');
+                generateBtn.innerHTML = '<span>🚀</span>生成AI写作提示词';
+                generateBtn.disabled = false;
+                
+                if (data.success) {
+                    // 显示生成的提示词
+                    document.getElementById('promptResult').textContent = data.data.prompt;
+                    // 如果返回了随机生成的作者名，更新输入框
+                    if (data.data.authorName && !formData.authorName) {
+                        document.getElementById('authorName').value = data.data.authorName;
+                    }
+                } else {
+                    // 显示错误信息
+                    document.getElementById('promptResult').textContent = '生成失败: ' + (data.message || data.error || '未知错误');
+                }
+            } catch (error) {
+                console.error('生成提示词错误:', error);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('promptResult').style.display = 'block';
+                document.getElementById('promptResult').textContent = '请求失败，请检查网络连接或API密钥是否正确';
+                
+                // 恢复按钮状态
+                const generateBtn = document.getElementById('generateBtn');
+                generateBtn.innerHTML = '<span>🚀</span>生成AI写作提示词';
+                generateBtn.disabled = false;
+            }
+        }
+
+
+
+        /**
+         * 复制提示词到剪贴板
+         */
+        function copyPrompt() {
+            const promptText = document.getElementById('promptResult').textContent;
+            
+            if (promptText && promptText !== 'AI生成的写作提示词将显示在这里...') {
+                navigator.clipboard.writeText(promptText).then(() => {
+                    alert('提示词已复制到剪贴板');
+                }).catch(err => {
+                    console.error('复制失败:', err);
+                    alert('复制失败，请手动选择文本并复制');
+                });
+            } else {
+                alert('没有可复制的提示词');
+            }
+        }
+
+        /**
+         * 导出提示词为TXT文件
+         */
+        function exportPrompt() {
+            const promptText = document.getElementById('promptResult').textContent;
+            
+            if (promptText && promptText !== 'AI生成的写作提示词将显示在这里...') {
+                const blob = new Blob([promptText], {type: 'text/plain'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'AI写作提示词_' + new Date().toISOString().slice(0, 10) + '.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else {
+                alert('没有可导出的提示词');
+            }
+        }
+    </script>
+</body>
+</html>
